@@ -1,0 +1,91 @@
+# load packages
+library(data.table)
+library(reshape2)
+
+##################################################################
+# Merge the training and test data sets to creat only one data set
+
+#### reading the files
+# subject file
+sub.train <- read.table("train/subject_train.txt")
+head(sub.train)
+dim(sub.train)
+
+sub.test <- read.table("test/subject_test.txt")
+head(sub.test)
+dim(sub.test)
+
+# activity file
+y.train<-read.table("train/Y_train.txt")
+dim(y.train)
+head(y.train)
+
+y.test<-read.table("test/Y_test.txt")
+dim(y.test)
+head(y.test)
+
+# data files
+x.train<-read.table("train/X_train.txt")
+dim(x.train)
+head(x.train[,1])
+names(x.train)
+
+x.test<-read.table("test/X_test.txt")
+dim(x.test)
+head(x.test[,1])
+names(x.test)
+
+# Merge the training and the test sets
+subject <- rbind(sub.train,sub.test)
+setnames(subject, "V1", "subject")
+head(subject)
+activity<-rbind(y.train,y.test)
+setnames(activity, "V1", "activity")
+head(activity)
+dt<-rbind(x.train,x.test)
+head(dt)
+
+# complet data set
+dt.sub<-cbind(subject,activity)
+df.final<-cbind(dt.sub,dt)
+head(df.final)
+
+########################################################################################
+# Extracts only the measurements on the mean and standard deviation for each measurement
+
+features<-read.table("features.txt")
+mean.std.feat<- grepl("mean\\(\\)|std\\(\\)", features[,2])
+features$featureCode<-features[,paste0("V",1)]
+head(features)
+features
+
+#######################################################################
+# Use descriptive activity names to name the activities in the data set
+act<-read.table("activity_labels.txt")
+colnames(act)<-c("actId","ActName")
+
+data.final<-merge(act,df.final,all.x=TRUE)
+data.final<-data.final[,-1]
+head(data.final)
+colNames <- colnames(data.final)
+names(data.final)
+
+##################
+for (i in 1:length(colNames)) 
+{
+  colNames[i] = gsub("\\()","",colNames[i])
+  colNames[i] = gsub("-std$","StdDev",colNames[i])
+  colNames[i] = gsub("-mean","Mean",colNames[i])
+  colNames[i] = gsub("^(t)","time",colNames[i])
+  colNames[i] = gsub("^(f)","freq",colNames[i])
+  colNames[i] = gsub("([Gg]ravity)","Gravity",colNames[i])
+  colNames[i] = gsub("([Bb]ody[Bb]ody|[Bb]ody)","Body",colNames[i])
+  colNames[i] = gsub("[Gg]yro","Gyro",colNames[i])
+  colNames[i] = gsub("AccMag","AccMagnitude",colNames[i])
+  colNames[i] = gsub("([Bb]odyaccjerkmag)","BodyAccJerkMagnitude",colNames[i])
+  colNames[i] = gsub("JerkMag","JerkMagnitude",colNames[i])
+  colNames[i] = gsub("GyroMag","GyroMagnitude",colNames[i])
+}
+colnames(data.final)=colNames
+tidy.data<-data.final[,names(data.final) != 'act']
+head(tidy.data)
